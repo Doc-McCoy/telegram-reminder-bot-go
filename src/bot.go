@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -15,14 +14,21 @@ type Configuration struct {
 	MongoConnectionString string
 }
 
+// Interface do módulo que salva informações no mongoDB
+type MongoData interface {
+	Save() string
+}
+
+func recognizer(message string) {
+
+}
+
 func main() {
 	// Carregar as variáveis do arquivo config.json
 	var configuration Configuration
 	byteFile, _ := ioutil.ReadFile("./config.dev.json")
 	json.Unmarshal(byteFile, &configuration)
 	configuration.MongoConnectionString = os.Getenv("MONGO_URL")
-
-	fmt.Println(configuration)
 
 	// Inicialização do bot
 	bot, err := tgbotapi.NewBotAPI(configuration.BotApi)
@@ -40,15 +46,34 @@ func main() {
 	updates, err := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.Message == nil { // ignore any non-Message Updates
+		// Ignora updates que não sejam mensagens
+		if update.Message == nil {
 			continue
 		}
 
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+		// log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		msg.ReplyToMessageID = update.Message.MessageID
+		// Verifica se a mensagem é um comando:
+		if update.Message.IsCommand() {
 
-		bot.Send(msg)
+			chat_id := update.Message.Chat.ID
+			msg := tgbotapi.NewMessage(chat_id, "")
+
+			switch update.Message.Command() {
+			case "30m":
+				msg.Text = "Te chamo daqui 30 minutos!"
+			case "1h":
+				msg.Text = "Te chamo daqui 1 hora!"
+			case "1d":
+				msg.Text = "Te chamo daqui 1 dia!"
+			}
+
+			bot.Send(msg)
+		}
+
+		// msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+		// msg.ReplyToMessageID = update.Message.MessageID
+
+		// bot.Send(msg)
 	}
 }
