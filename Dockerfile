@@ -1,12 +1,11 @@
 FROM golang
 
-ADD . /go/src/reminder-bot
+ADD ./src /go/src/bot
 
-RUN go get gorm.io/gorm
-RUN go get gorm.io/driver/postgres
-RUN go get github.com/go-telegram-bot-api/telegram-bot-api@develop
-RUN go install reminder-bot
+RUN go get -u gorm.io/gorm
+RUN go get -u gorm.io/driver/postgres
+RUN go get -u github.com/go-telegram-bot-api/telegram-bot-api
 
-ENTRYPOINT /go/bin/reminder-bot
+RUN go install bot
 
-EXPOSE 8080
+ENTRYPOINT /go/bin/bot
