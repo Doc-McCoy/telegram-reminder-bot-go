@@ -1,0 +1,24 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: messages
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  bot:
+    build: .
+    depends_on:
+      - db
+    volumes:
+      - ./src:/app
+    env_file: ./src/.env
