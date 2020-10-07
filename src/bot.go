@@ -1,12 +1,13 @@
 package main
 
 import (
-	"log"
 	"os"
-	"time"
+	// "time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	// "github.com/xo/dburl"
 )
 
 type Configuration struct {
@@ -16,8 +17,8 @@ type Configuration struct {
 
 type Reminder struct {
 	gorm.Model
-	ChatId   string
-	DateHour time.Time
+	ChatId   int64
+	// DateHour time.Time
 	Content  string
 }
 
@@ -27,13 +28,17 @@ func main() {
 	configuration.BotToken = os.Getenv("TELEGRAM_TOKEN")
 	configuration.PsqlConnectionString = os.Getenv("DATABASE_URL")
 
+	// Conexão com o banco
+	db, err := gorm.Open(postgres.Open(configuration.PsqlConnectionString), &gorm.Config{})
+
+	// Realizar migração inicial
+	db.AutoMigrate(&Reminder{})
+
 	// Inicialização do bot
 	bot, err := tgbotapi.NewBotAPI(configuration.BotToken)
 	if err != nil {
 		log.Panic(err)
 	}
-	bot.Debug = true
-	log.Printf("Authorized on account %s", bot.Self.UserName)
 
 	// Receber os updates do bot
 	updateConfig := tgbotapi.NewUpdate(0)
@@ -66,10 +71,14 @@ func main() {
 			bot.Send(msg)
 		}
 
+		// Salva a mensagem no banco
+		chat_id := update.Message.Chat.ID
+		content := update.Message.Text
+		db.Create(&Reminder{ChatId: chat_id, Content: content})
+
 		// Responde a mensagem de volta pra quem enviou
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 		msg.ReplyToMessageID = update.Message.MessageID
 		bot.Send(msg)
-
 	}
 }
