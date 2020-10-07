@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 	"log"
-	// "time"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"gorm.io/driver/postgres"
@@ -18,7 +18,7 @@ type Configuration struct {
 type Reminder struct {
 	gorm.Model
 	ChatId   int64
-	// DateHour time.Time
+	DateHour time.Time
 	Content  string
 }
 
@@ -39,6 +39,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
+	bot.Debug = true
 
 	// Receber os updates do bot
 	updateConfig := tgbotapi.NewUpdate(0)
@@ -53,32 +54,42 @@ func main() {
 
 		// Verifica se a mensagem é um comando:
 		if update.Message.IsCommand() {
+			var datetime_to_remember time.Time
+			var content string
 			chat_id := update.Message.Chat.ID
-			msg := tgbotapi.NewMessage(chat_id, "")
+			datetime_now := time.Unix(int64(update.Message.Date), 0)
+			response := tgbotapi.NewMessage(chat_id, "")
 
 			switch update.Message.Command() {
 			case "30m":
-				msg.Text = "Ok, te chamo daqui 30 minutos!"
-				// TODO: Salvar lembrete no banco
+				response.Text = "Ok, te chamo daqui 30 minutos!"
+				datetime_to_remember = datetime_now.Add(30*time.Minute)
+				content = "30 minutos já se passaram!"
 			case "1h":
-				msg.Text = "Ok, te chamo daqui 1 hora!"
-				// TODO: Salvar lembrete no banco
+				response.Text = "Ok, te chamo daqui 1 hora!"
+				datetime_to_remember = datetime_now.Add(30*time.Hour)
+				content = "1 hora já se passou!"
 			case "1d":
-				msg.Text = "Ok, te chamo daqui 1 dia!"
-				// TODO: Salvar lembrete no banco
+				response.Text = "Ok, te chamo daqui 1 dia!"
+				datetime_to_remember = datetime_now.AddDate(0, 0, 1)
+				content = "1 dia já se passou!"
 			}
 
+			db.Create(&Reminder{ChatId: chat_id, Content: content, DateHour: datetime_to_remember})
+			bot.Send(response)
+
+		} else {
+			// Salva a mensagem no banco
+			chat_id := update.Message.Chat.ID
+			content := update.Message.Text
+			datetime := int64(update.Message.Date)
+			unix_datetime := time.Unix(datetime, 0)
+			db.Create(&Reminder{ChatId: chat_id, Content: content, DateHour: unix_datetime})
+
+			// Responde a mensagem de volta pra quem enviou
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+			msg.ReplyToMessageID = update.Message.MessageID
 			bot.Send(msg)
 		}
-
-		// Salva a mensagem no banco
-		chat_id := update.Message.Chat.ID
-		content := update.Message.Text
-		db.Create(&Reminder{ChatId: chat_id, Content: content})
-
-		// Responde a mensagem de volta pra quem enviou
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		msg.ReplyToMessageID = update.Message.MessageID
-		bot.Send(msg)
 	}
 }
