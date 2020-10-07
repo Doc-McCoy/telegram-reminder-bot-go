@@ -2,12 +2,12 @@ package main
 
 import (
 	"os"
+	"log"
 	// "time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	// "github.com/xo/dburl"
 )
 
 type Configuration struct {
