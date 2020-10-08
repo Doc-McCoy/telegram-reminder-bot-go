@@ -1,8 +1,9 @@
 package main
 
 import (
-	"os"
 	"log"
+	"os"
+	"regexp"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -20,6 +21,12 @@ type Reminder struct {
 	ChatId   int64
 	DateHour time.Time
 	Content  string
+}
+
+func findHour(message string) string {
+	var re = regexp.MustCompile(`(?m)\d{1,2}[h|:]\d{2}`)
+	var result = re.FindString(message)
+	return result
 }
 
 func main() {
@@ -63,11 +70,11 @@ func main() {
 			switch update.Message.Command() {
 			case "30m":
 				response.Text = "Ok, te chamo daqui 30 minutos!"
-				datetime_to_remember = datetime_now.Add(30*time.Minute)
+				datetime_to_remember = datetime_now.Add(30 * time.Minute)
 				content = "30 minutos já se passaram!"
 			case "1h":
 				response.Text = "Ok, te chamo daqui 1 hora!"
-				datetime_to_remember = datetime_now.Add(30*time.Hour)
+				datetime_to_remember = datetime_now.Add(30 * time.Hour)
 				content = "1 hora já se passou!"
 			case "1d":
 				response.Text = "Ok, te chamo daqui 1 dia!"
