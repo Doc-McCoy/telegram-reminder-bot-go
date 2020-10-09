@@ -23,6 +23,12 @@ type Reminder struct {
 	Content  string
 }
 
+func findDate(message string) string {
+	var re = regexp.MustCompile(`(?m)\d{2}\/\d{2}\/\d{4}`)
+	var result = re.FindString(message)
+	return result
+}
+
 func findHour(message string) string {
 	var re = regexp.MustCompile(`(?m)\d{1,2}[h|:]\d{2}`)
 	var result = re.FindString(message)
