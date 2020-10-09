@@ -29,6 +29,18 @@ func findHour(message string) string {
 	return result
 }
 
+func findTomorrow(message string) bool {
+	var re = regexp.MustCompile(`(?m)amanhã|amanha`)
+	var result = re.MatchString(message)
+	return result
+}
+
+func findToday(message string) bool {
+	var re = regexp.MustCompile(`(?m)hoje`)
+	var result = re.MatchString(message)
+	return result
+}
+
 func main() {
 	// Carregar as variáveis de ambiente
 	var configuration Configuration
