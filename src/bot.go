@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"regexp"
+	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -104,17 +106,52 @@ func main() {
 			bot.Send(response)
 
 		} else {
-			// Salva a mensagem no banco
+			// Extrair informações da mensagem
+			content_ok := true
 			chat_id := update.Message.Chat.ID
 			content := update.Message.Text
-			datetime := int64(update.Message.Date)
-			unix_datetime := time.Unix(datetime, 0)
-			db.Create(&Reminder{ChatId: chat_id, Content: content, DateHour: unix_datetime})
+			response := tgbotapi.NewMessage(chat_id, "")
+			var date time.Time
+			// datetime := int64(update.Message.Date)
+			// unix_datetime := time.Unix(datetime, 0)
 
+			date_find := findDate(content)
+			hour_find := findHour(content)
+			tomorrou_find := findTomorrow(content)
+			today_find := findToday(content)
+
+			// Localiza e define data
+			if date_find == "" {
+				if today_find {
+					date = time.Now()
+				} else if tomorrou_find {
+					now := time.Now()
+					date = now.AddDate(0, 0, 1)
+				} else {
+					content_ok = false
+				}
+			}
+
+			// Localiza e define hora
+			if hour_find == "" {
+				content_ok = false
+			}
+
+			if content_ok {
+				split_time := strings.Split(hour_find, ":")
+				date.Hour = split_time[0]
+				date.Minute = split_time[1]
+
+				fmt.Println(date)
+
+				// Salva infos no banco
+				// db.Create(&Reminder{ChatId: chat_id, Content: content, DateHour: unix_datetime})
+				response.Text = "Lembrete salvo para dia X, as Y."
+			} else {
+				response.Text = "Desculpe, não consegui identificar a data e a hora do lembrete."
+			}
 			// Responde a mensagem de volta pra quem enviou
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-			msg.ReplyToMessageID = update.Message.MessageID
-			bot.Send(msg)
+			bot.Send(response)
 		}
 	}
 }
